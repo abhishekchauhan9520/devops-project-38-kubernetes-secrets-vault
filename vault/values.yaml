@@ -1,0 +1,14 @@
+server:
+  dev:
+    enabled: true
+  dataStorage:
+    enabled: true
+    size: 1Gi
+  standalone:
+    enabled: true
+
+injector:
+  enabled: true
+
+ui:
+  enabled: true
