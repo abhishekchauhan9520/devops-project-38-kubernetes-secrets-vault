@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-demo-app
+  namespace: vault-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vault-demo-app
+  template:
+    metadata:
+      labels:
+        app: vault-demo-app
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "vault-demo-app"
+        vault.hashicorp.com/agent-pre-populate-only: "true"
+        vault.hashicorp.com/agent-inject-secret-app.env: "secret/data/demo/app"
+        vault.hashicorp.com/agent-inject-template-app.env: |
+          {{- with secret "secret/data/demo/app" -}}
+          APP_USERNAME={{ .Data.data.username }}
+          APP_PASSWORD={{ .Data.data.password }}
+          {{- end }}
+    spec:
+      serviceAccountName: vault-demo-app
+      containers:
+        - name: app
+          image: nginxinc/nginx-unprivileged:1.29-alpine
+          ports:
+            - containerPort: 8080
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              test -s /vault/secrets/app.env
+              touch /tmp/vault-ready
+              exec nginx -g 'daemon off;'
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
