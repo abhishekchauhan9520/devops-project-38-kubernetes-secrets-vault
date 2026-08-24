@@ -1,0 +1,6 @@
+.env
+*.secret
+*.token
+vault-token.txt
+kubeconfig*
+.DS_Store
