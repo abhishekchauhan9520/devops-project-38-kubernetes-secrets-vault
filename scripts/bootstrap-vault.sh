@@ -8,10 +8,14 @@ POLICY=${VAULT_POLICY_NAME:-vault-demo-app}
 ROLE=${VAULT_ROLE_NAME:-vault-demo-app}
 
 : "${VAULT_TOKEN:?Set VAULT_TOKEN to a Vault operator token}"
+: "${VAULT_APP_PASSWORD:?Set VAULT_APP_PASSWORD without echoing it}"
 
 kubectl -n "$NAMESPACE" cp vault/policy.hcl "$POD":/tmp/policy.hcl
 
-kubectl -n "$NAMESPACE" exec "$POD" -- env VAULT_TOKEN="$VAULT_TOKEN" sh -ceu '
+kubectl -n "$NAMESPACE" exec "$POD" -- env \
+  VAULT_TOKEN="$VAULT_TOKEN" \
+  VAULT_APP_PASSWORD="$VAULT_APP_PASSWORD" \
+  sh -ceu '
   export VAULT_ADDR="http://127.0.0.1:8200"
   vault status >/dev/null
   vault token lookup >/dev/null
@@ -30,7 +34,7 @@ kubectl -n "$NAMESPACE" exec "$POD" -- env VAULT_TOKEN="$VAULT_TOKEN" sh -ceu '
 
   vault kv put secret/demo/app \
     username="demo-user" \
-    password="change-me-in-vault"
+    password="$VAULT_APP_PASSWORD"
 
   vault write auth/'$AUTH_MOUNT'/role/'$ROLE' \
     bound_service_account_names=vault-demo-app \
@@ -40,4 +44,4 @@ kubectl -n "$NAMESPACE" exec "$POD" -- env VAULT_TOKEN="$VAULT_TOKEN" sh -ceu '
     max_ttl=30m
 '
 
-echo "Vault bootstrap complete. Replace the lab password in Vault before real use."
+echo "Vault bootstrap complete. Initial secret was supplied outside Git."
