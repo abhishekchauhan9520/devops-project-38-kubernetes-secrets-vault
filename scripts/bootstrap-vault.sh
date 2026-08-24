@@ -9,6 +9,8 @@ ROLE=${VAULT_ROLE_NAME:-vault-demo-app}
 
 : "${VAULT_TOKEN:?Set VAULT_TOKEN to a Vault operator token}"
 
+kubectl -n "$NAMESPACE" cp vault/policy.hcl "$POD":/tmp/policy.hcl
+
 kubectl -n "$NAMESPACE" exec "$POD" -- env VAULT_TOKEN="$VAULT_TOKEN" sh -ceu '
   export VAULT_ADDR="http://127.0.0.1:8200"
   vault status >/dev/null
@@ -36,8 +38,6 @@ kubectl -n "$NAMESPACE" exec "$POD" -- env VAULT_TOKEN="$VAULT_TOKEN" sh -ceu '
     policies="$POLICY" \
     ttl=15m \
     max_ttl=30m
-' /tmp/policy.hcl
-
-kubectl -n "$NAMESPACE" cp vault/policy.hcl "$POD":/tmp/policy.hcl
+'
 
 echo "Vault bootstrap complete. Replace the lab password in Vault before real use."
