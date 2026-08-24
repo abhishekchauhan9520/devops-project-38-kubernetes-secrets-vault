@@ -1,6 +1,6 @@
 server:
   dev:
-    enabled: true
+    enabled: false
   dataStorage:
     enabled: true
     size: 1Gi
